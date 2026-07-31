@@ -20,3 +20,6 @@ build/
 # Operating system
 .DS_Store
 Thumbs.db
+
+# Generated Prisma Client
+apps/api/src/generated/prisma/
