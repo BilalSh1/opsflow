@@ -1,4 +1,5 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import type { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type { User } from '../generated/prisma/client';
 import type { UsersService } from '../users/users.service';
@@ -11,6 +12,8 @@ describe('AuthService', () => {
   let usersServiceMock: jest.Mocked<
     Pick<UsersService, 'findByEmail' | 'create'>
   >;
+
+  let jwtServiceMock: jest.Mocked<Pick<JwtService, 'signAsync'>>;
 
   const registerDto: RegisterDto = {
     email: 'test@example.com',
@@ -35,68 +38,149 @@ describe('AuthService', () => {
       create: jest.fn(),
     };
 
-    authService = new AuthService(usersServiceMock as unknown as UsersService);
+    jwtServiceMock = {
+      signAsync: jest.fn(),
+    };
+
+    authService = new AuthService(
+      usersServiceMock as unknown as UsersService,
+      jwtServiceMock as unknown as JwtService,
+    );
   });
 
-  it('registers a user with a hashed password', async () => {
-    usersServiceMock.findByEmail.mockResolvedValue(null);
+  describe('register', () => {
+    it('registers a user with a hashed password', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(null);
 
-    usersServiceMock.create.mockImplementation(async (data) => ({
-      ...user,
-      email: data.email,
-      passwordHash: data.passwordHash,
-      firstName: data.firstName,
-      lastName: data.lastName,
-    }));
+      usersServiceMock.create.mockImplementation((data) =>
+        Promise.resolve({
+          ...user,
+          email: data.email,
+          passwordHash: data.passwordHash,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        }),
+      );
 
-    const result = await authService.register(registerDto);
+      const result = await authService.register(registerDto);
 
-    expect(usersServiceMock.findByEmail).toHaveBeenCalledWith(
-      registerDto.email,
-    );
+      expect(usersServiceMock.findByEmail).toHaveBeenCalledWith(
+        registerDto.email,
+      );
 
-    expect(usersServiceMock.create).toHaveBeenCalledTimes(1);
+      expect(usersServiceMock.create).toHaveBeenCalledTimes(1);
 
-    const createData = usersServiceMock.create.mock.calls[0][0];
+      const createData = usersServiceMock.create.mock.calls[0][0];
 
-    expect(createData.passwordHash).not.toBe(registerDto.password);
+      expect(createData.passwordHash).not.toBe(registerDto.password);
 
-    await expect(
-      argon2.verify(createData.passwordHash, registerDto.password),
-    ).resolves.toBe(true);
+      await expect(
+        argon2.verify(createData.passwordHash, registerDto.password),
+      ).resolves.toBe(true);
 
-    expect(result).toEqual({
-      user: {
-        id: user.id,
+      expect(result).toEqual({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          createdAt: user.createdAt.toISOString(),
+        },
+      });
+
+      expect(result.user).not.toHaveProperty('passwordHash');
+    });
+
+    it('rejects registration when the email already exists', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(user);
+
+      await expect(authService.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(usersServiceMock.create).not.toHaveBeenCalled();
+    });
+
+    it('handles a database unique-constraint conflict', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(null);
+
+      usersServiceMock.create.mockRejectedValue({
+        code: 'P2002',
+      });
+
+      await expect(authService.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+  });
+
+  describe('login', () => {
+    it('logs in a user and returns an access token', async () => {
+      const password = 'StrongPassword123!';
+      const passwordHash = await argon2.hash(password);
+
+      usersServiceMock.findByEmail.mockResolvedValue({
+        ...user,
+        passwordHash,
+      });
+
+      jwtServiceMock.signAsync.mockResolvedValue('test-access-token');
+
+      const result = await authService.login({
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        createdAt: user.createdAt.toISOString(),
-      },
+        password,
+      });
+
+      expect(usersServiceMock.findByEmail).toHaveBeenCalledWith(user.email);
+
+      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith({
+        sub: user.id,
+        email: user.email,
+      });
+
+      expect(result).toEqual({
+        accessToken: 'test-access-token',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          createdAt: user.createdAt.toISOString(),
+        },
+      });
+
+      expect(result.user).not.toHaveProperty('passwordHash');
     });
 
-    expect(result.user).not.toHaveProperty('passwordHash');
-  });
+    it('rejects login when the password is incorrect', async () => {
+      const passwordHash = await argon2.hash('CorrectPassword123!');
 
-  it('rejects registration when the email already exists', async () => {
-    usersServiceMock.findByEmail.mockResolvedValue(user);
+      usersServiceMock.findByEmail.mockResolvedValue({
+        ...user,
+        passwordHash,
+      });
 
-    await expect(authService.register(registerDto)).rejects.toThrow(
-      ConflictException,
-    );
+      await expect(
+        authService.login({
+          email: user.email,
+          password: 'WrongPassword123!',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
 
-    expect(usersServiceMock.create).not.toHaveBeenCalled();
-  });
-
-  it('handles a database unique-constraint conflict', async () => {
-    usersServiceMock.findByEmail.mockResolvedValue(null);
-
-    usersServiceMock.create.mockRejectedValue({
-      code: 'P2002',
+      expect(jwtServiceMock.signAsync).not.toHaveBeenCalled();
     });
 
-    await expect(authService.register(registerDto)).rejects.toThrow(
-      ConflictException,
-    );
+    it('rejects login when the user does not exist', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(null);
+
+      await expect(
+        authService.login({
+          email: 'missing@example.com',
+          password: 'StrongPassword123!',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(jwtServiceMock.signAsync).not.toHaveBeenCalled();
+    });
   });
 });

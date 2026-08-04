@@ -27,6 +27,7 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
@@ -66,7 +67,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-    "^(\\.{1,2}/.*)\\.js$": "$1"
+      "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "moduleFileExtensions": [
       "js",
@@ -83,6 +84,5 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-    
   }
 }
