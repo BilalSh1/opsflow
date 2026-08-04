@@ -1,7 +1,7 @@
 import { AuthController } from './auth.controller';
 import type { AuthService } from './auth.service';
 import type { RegisterDto } from './dto/register.dto';
-import type { RegisterResponse } from './interfaces/register-response.interface';
+import type { RegisterResponse } from './interfaces/auth-response.interface';
 
 describe('AuthController', () => {
   let authController: AuthController;
