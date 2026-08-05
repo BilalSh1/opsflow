@@ -10,7 +10,7 @@ describe('AuthService', () => {
   let authService: AuthService;
 
   let usersServiceMock: jest.Mocked<
-    Pick<UsersService, 'findByEmail' | 'create'>
+    Pick<UsersService, 'findById' | 'findByEmail' | 'create'>
   >;
 
   let jwtServiceMock: jest.Mocked<Pick<JwtService, 'signAsync'>>;
@@ -34,6 +34,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     usersServiceMock = {
+      findById: jest.fn(),
       findByEmail: jest.fn(),
       create: jest.fn(),
     };
@@ -117,7 +118,13 @@ describe('AuthService', () => {
   describe('login', () => {
     it('logs in a user and returns an access token', async () => {
       const password = 'StrongPassword123!';
-      const passwordHash = await argon2.hash(password);
+      const hashResult: unknown = await argon2.hash(password);
+
+      if (typeof hashResult !== 'string') {
+        throw new Error('Argon2 did not return a string hash');
+      }
+
+      const passwordHash = hashResult;
 
       usersServiceMock.findByEmail.mockResolvedValue({
         ...user,
@@ -148,8 +155,6 @@ describe('AuthService', () => {
           createdAt: user.createdAt.toISOString(),
         },
       });
-
-      expect(result.user).not.toHaveProperty('passwordHash');
     });
 
     it('rejects login when the password is incorrect', async () => {
@@ -181,6 +186,34 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
 
       expect(jwtServiceMock.signAsync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getCurrentUser', () => {
+    it('returns the authenticated user without the password hash', async () => {
+      usersServiceMock.findById.mockResolvedValue(user);
+
+      const result = await authService.getCurrentUser(user.id);
+
+      expect(usersServiceMock.findById).toHaveBeenCalledWith(user.id);
+
+      expect(result).toEqual({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          createdAt: user.createdAt.toISOString(),
+        },
+      });
+    });
+
+    it('rejects the request when the authenticated user no longer exists', async () => {
+      usersServiceMock.findById.mockResolvedValue(null);
+
+      await expect(authService.getCurrentUser(user.id)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

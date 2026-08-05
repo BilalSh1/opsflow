@@ -14,3 +14,7 @@ export interface LoginResponse {
   accessToken: string;
   user: AuthUserResponse;
 }
+
+export interface MeResponse {
+  user: AuthUserResponse;
+}
