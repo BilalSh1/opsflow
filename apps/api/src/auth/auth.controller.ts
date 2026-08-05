@@ -1,9 +1,21 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { AccessTokenGuard } from './guards/access-token.guard';
+import type { AccessTokenPayload } from './interfaces/access-token-payload.interface';
 import type {
   LoginResponse,
+  MeResponse,
   RegisterResponse,
 } from './interfaces/auth-response.interface';
 
@@ -21,5 +33,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
     return this.authService.login(loginDto);
+  }
+
+  @Get('me')
+  @UseGuards(AccessTokenGuard)
+  getMe(@CurrentUser() currentUser: AccessTokenPayload): Promise<MeResponse> {
+    return this.authService.getCurrentUser(currentUser.sub);
   }
 }

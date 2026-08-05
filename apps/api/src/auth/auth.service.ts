@@ -16,6 +16,7 @@ import type {
   AuthUserResponse,
   LoginResponse,
   RegisterResponse,
+  MeResponse,
 } from './interfaces/auth-response.interface';
 
 @Injectable()
@@ -88,6 +89,18 @@ export class AuthService {
 
     return {
       accessToken,
+      user: this.toUserResponse(user),
+    };
+  }
+
+  async getCurrentUser(userId: string): Promise<MeResponse> {
+    const user = await this.usersService.findById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('Authenticated user no longer exists');
+    }
+
+    return {
       user: this.toUserResponse(user),
     };
   }
