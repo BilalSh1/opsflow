@@ -107,7 +107,7 @@ describe('MembersService', () => {
       updateRole: jest.fn((_db, id, role) =>
         Promise.resolve(withUser({ ...member, id, role })),
       ),
-      delete: jest.fn(() => Promise.resolve()),
+      delete: jest.fn().mockResolvedValue(undefined),
     };
 
     usersMock = { findByEmail: jest.fn() };
