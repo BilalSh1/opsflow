@@ -16,6 +16,10 @@ export function canManageMembers(role: OrganizationRole): boolean {
   return role === 'OWNER' || role === 'ADMIN'
 }
 
+export function canManageTeams(role: OrganizationRole): boolean {
+  return role === 'OWNER' || role === 'ADMIN'
+}
+
 // Roles the actor may hand out; only owners may grant OWNER.
 export function grantableRoles(actorRole: OrganizationRole): OrganizationRole[] {
   return actorRole === 'OWNER' ? ROLES : ROLES.filter((role) => role !== 'OWNER')
