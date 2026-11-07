@@ -8,6 +8,7 @@ export interface OrganizationsContextValue {
   organizations: Organization[]
   reload: () => void
   addOrganization: (organization: Organization) => void
+  removeOrganization: (organizationId: string) => void
 }
 
 export const OrganizationsContext =

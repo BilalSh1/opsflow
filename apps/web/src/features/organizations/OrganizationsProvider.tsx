@@ -59,6 +59,19 @@ export function OrganizationsProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const removeOrganization = useCallback((organizationId: string) => {
+    setResult((current) =>
+      current
+        ? {
+            ...current,
+            organizations: current.organizations.filter(
+              (existing) => existing.id !== organizationId,
+            ),
+          }
+        : current,
+    )
+  }, [])
+
   const value = useMemo<OrganizationsContextValue>(() => {
     const current = result?.request === request ? result : null
 
@@ -67,8 +80,9 @@ export function OrganizationsProvider({ children }: { children: ReactNode }) {
       organizations: current?.organizations ?? [],
       reload,
       addOrganization,
+      removeOrganization,
     }
-  }, [result, request, reload, addOrganization])
+  }, [result, request, reload, addOrganization, removeOrganization])
 
   return (
     <OrganizationsContext.Provider value={value}>

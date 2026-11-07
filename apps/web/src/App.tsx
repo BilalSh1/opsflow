@@ -5,7 +5,9 @@ import { RequireAuth } from './features/auth/RequireAuth'
 import { CreateOrganizationPage } from './pages/CreateOrganizationPage'
 import { HomeRedirect } from './pages/HomeRedirect'
 import { LoginPage } from './pages/LoginPage'
-import { OrganizationPage } from './pages/OrganizationPage'
+import { MembersPage } from './pages/MembersPage'
+import { OrganizationLayout } from './pages/OrganizationLayout'
+import { OrganizationOverview } from './pages/OrganizationOverview'
 import { RegisterPage } from './pages/RegisterPage'
 
 function App() {
@@ -25,8 +27,11 @@ function App() {
           />
           <Route
             path="/organizations/:organizationId"
-            element={<OrganizationPage />}
-          />
+            element={<OrganizationLayout />}
+          >
+            <Route index element={<OrganizationOverview />} />
+            <Route path="members" element={<MembersPage />} />
+          </Route>
         </Route>
       </Route>
 
