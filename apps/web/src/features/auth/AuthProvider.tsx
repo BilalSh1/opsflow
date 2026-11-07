@@ -7,14 +7,20 @@ import { AuthContext, type AuthContextValue, type AuthStatus } from './auth-cont
 interface AuthState {
   status: AuthStatus
   user: AuthUser | null
+  loggedOut: boolean
 }
 
-const signedOut: AuthState = { status: 'unauthenticated', user: null }
+const signedOut: AuthState = {
+  status: 'unauthenticated',
+  user: null,
+  loggedOut: false,
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     status: 'loading',
     user: null,
+    loggedOut: false,
   })
 
   // Restore the session from the refresh-token cookie on startup.
@@ -27,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) {
           setState(
             session
-              ? { status: 'authenticated', user: session.user }
+              ? { status: 'authenticated', user: session.user, loggedOut: false }
               : signedOut,
           )
         }
@@ -43,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (input: LoginInput) => {
     const session = await authApi.login(input)
-    setState({ status: 'authenticated', user: session.user })
+    setState({ status: 'authenticated', user: session.user, loggedOut: false })
   }, [])
 
   const register = useCallback(
@@ -58,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout()
     } finally {
-      setState(signedOut)
+      setState({ ...signedOut, loggedOut: true })
     }
   }, [])
 
