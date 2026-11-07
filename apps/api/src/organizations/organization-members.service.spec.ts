@@ -31,6 +31,68 @@ describe('OrganizationMembersService', () => {
     });
   });
 
+  it('finds a membership by user with the given client', async () => {
+    const db = { organizationMember: { findUnique: jest.fn() } };
+
+    await organizationMembersService.findByUser(
+      db as unknown as PrismaService,
+      organizationId,
+      userId,
+    );
+
+    expect(db.organizationMember.findUnique).toHaveBeenCalledWith({
+      where: { organizationId_userId: { organizationId, userId } },
+    });
+  });
+
+  it('lists organization members by role, then name', async () => {
+    await organizationMembersService.findAllInOrganization(organizationId);
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { organizationId },
+      include: {
+        user: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+      },
+      orderBy: [
+        { role: 'asc' },
+        { user: { firstName: 'asc' } },
+        { user: { lastName: 'asc' } },
+      ],
+    });
+  });
+
+  it('locks the organization row before running the work', async () => {
+    const queryRawMock = jest.fn(() => Promise.resolve([]));
+    const tx = { $queryRaw: queryRawMock };
+    const transactionMock = jest.fn(
+      (work: (client: typeof tx) => Promise<unknown>) => work(tx),
+    );
+    const service = new OrganizationMembersService({
+      $transaction: transactionMock,
+    } as unknown as PrismaService);
+
+    const result = await service.withOrganizationLock(
+      organizationId,
+      (client) => {
+        expect(client).toBe(tx);
+        return Promise.resolve('done');
+      },
+    );
+
+    expect(result).toBe('done');
+    expect(queryRawMock).toHaveBeenCalledTimes(1);
+
+    const [sql, ...values] = queryRawMock.mock.calls[0] as unknown as [
+      TemplateStringsArray,
+      ...unknown[],
+    ];
+
+    expect(sql.join('?')).toContain('FOR UPDATE');
+    expect(values).toEqual([organizationId]);
+  });
+
   it("lists the user's memberships, newest organization first", async () => {
     await organizationMembersService.findAllForUser(userId);
 
