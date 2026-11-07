@@ -42,6 +42,7 @@ model Organization {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   members OrganizationMember[]
+  teams   Team[]
 
   @@map("organizations")
 }
@@ -54,12 +55,43 @@ model OrganizationMember {
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
 
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamMemberships TeamMember[]
 
   @@unique([organizationId, userId])
   @@index([userId])
   @@map("organization_members")
+}
+
+model Team {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  @@unique([organizationId, name])
+  @@map("teams")
+}
+
+// Points at the organization membership, so leaving the organization also
+// removes the person from its teams.
+model TeamMember {
+  id                   String   @id @default(uuid()) @db.Uuid
+  teamId               String   @map("team_id") @db.Uuid
+  organizationMemberId String   @map("organization_member_id") @db.Uuid
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  team               Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organizationMember OrganizationMember @relation(fields: [organizationMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, organizationMemberId])
+  @@index([organizationMemberId])
+  @@map("team_members")
 }
 
 model RefreshSession {
