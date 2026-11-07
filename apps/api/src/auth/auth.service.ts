@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type { User } from '../generated/prisma/client';
+import { RefreshSessionsService } from '../refresh-sessions/refresh-sessions.service';
 import { UsersService } from '../users/users.service';
 import type {
   LoginInput,
@@ -13,17 +14,26 @@ import type {
 } from './interfaces/auth-input.interface';
 import type { AccessTokenPayload } from './interfaces/access-token-payload.interface';
 import type {
+  AuthResult,
   AuthUserResponse,
-  LoginResponse,
   RegisterResponse,
   MeResponse,
 } from './interfaces/auth-response.interface';
+import {
+  generateRefreshToken,
+  parseRefreshToken,
+  REFRESH_TOKEN_TTL_MS,
+  refreshTokenSecretMatches,
+} from './refresh-token';
+
+const INVALID_REFRESH_TOKEN_MESSAGE = 'Invalid or expired refresh token';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly refreshSessionsService: RefreshSessionsService,
   ) {}
 
   async register(registerDto: RegisterInput): Promise<RegisterResponse> {
@@ -57,7 +67,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginInput): Promise<LoginResponse> {
+  async login(loginDto: LoginInput): Promise<AuthResult> {
     const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user) {
@@ -73,24 +83,104 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload: AccessTokenPayload = {
-      sub: user.id,
-      email: user.email,
-    };
+    const accessToken = await this.signAccessToken(user);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpiresAt = this.refreshTokenExpiresAt();
 
-    const tokenResult: unknown =
-      await this.jwtService.signAsync<AccessTokenPayload>(payload);
-
-    if (typeof tokenResult !== 'string') {
-      throw new Error('Failed to generate access token');
-    }
-
-    const accessToken = tokenResult;
+    await this.refreshSessionsService.create({
+      id: refreshToken.sessionId,
+      userId: user.id,
+      tokenHash: refreshToken.tokenHash,
+      expiresAt: refreshTokenExpiresAt,
+    });
 
     return {
-      accessToken,
-      user: this.toUserResponse(user),
+      body: {
+        accessToken,
+        user: this.toUserResponse(user),
+      },
+      refreshToken: refreshToken.token,
+      refreshTokenExpiresAt,
     };
+  }
+
+  async refresh(rawRefreshToken: string | undefined): Promise<AuthResult> {
+    const parsed = parseRefreshToken(rawRefreshToken);
+
+    if (!parsed) {
+      throw new UnauthorizedException(INVALID_REFRESH_TOKEN_MESSAGE);
+    }
+
+    const session = await this.refreshSessionsService.findById(
+      parsed.sessionId,
+    );
+
+    // A wrong secret revokes nothing, so knowing a session id is not enough
+    // to log someone out.
+    if (
+      !session ||
+      !refreshTokenSecretMatches(parsed.secret, session.tokenHash)
+    ) {
+      throw new UnauthorizedException(INVALID_REFRESH_TOKEN_MESSAGE);
+    }
+
+    // A valid token for a revoked session was already rotated and may have
+    // been stolen, so every session of this user is ended.
+    if (session.revokedAt) {
+      await this.refreshSessionsService.revokeAllForUser(session.userId);
+      throw new UnauthorizedException(INVALID_REFRESH_TOKEN_MESSAGE);
+    }
+
+    if (session.expiresAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException(INVALID_REFRESH_TOKEN_MESSAGE);
+    }
+
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpiresAt = this.refreshTokenExpiresAt();
+
+    const rotated = await this.refreshSessionsService.rotate(session.id, {
+      id: refreshToken.sessionId,
+      userId: session.userId,
+      tokenHash: refreshToken.tokenHash,
+      expiresAt: refreshTokenExpiresAt,
+    });
+
+    // Another request rotated this session first; treat it like reuse.
+    if (!rotated) {
+      await this.refreshSessionsService.revokeAllForUser(session.userId);
+      throw new UnauthorizedException(INVALID_REFRESH_TOKEN_MESSAGE);
+    }
+
+    return {
+      body: {
+        accessToken: await this.signAccessToken(session.user),
+        user: this.toUserResponse(session.user),
+      },
+      refreshToken: refreshToken.token,
+      refreshTokenExpiresAt,
+    };
+  }
+
+  // Idempotent: a missing or invalid token is ignored rather than reported.
+  async logout(rawRefreshToken: string | undefined): Promise<void> {
+    const parsed = parseRefreshToken(rawRefreshToken);
+
+    if (!parsed) {
+      return;
+    }
+
+    const session = await this.refreshSessionsService.findById(
+      parsed.sessionId,
+    );
+
+    if (
+      !session ||
+      !refreshTokenSecretMatches(parsed.secret, session.tokenHash)
+    ) {
+      return;
+    }
+
+    await this.refreshSessionsService.revoke(session.id);
   }
 
   async getCurrentUser(userId: string): Promise<MeResponse> {
@@ -103,6 +193,26 @@ export class AuthService {
     return {
       user: this.toUserResponse(user),
     };
+  }
+
+  private async signAccessToken(user: User): Promise<string> {
+    const payload: AccessTokenPayload = {
+      sub: user.id,
+      email: user.email,
+    };
+
+    const tokenResult: unknown =
+      await this.jwtService.signAsync<AccessTokenPayload>(payload);
+
+    if (typeof tokenResult !== 'string') {
+      throw new Error('Failed to generate access token');
+    }
+
+    return tokenResult;
+  }
+
+  private refreshTokenExpiresAt(): Date {
+    return new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
   }
 
   private toUserResponse(user: User): AuthUserResponse {

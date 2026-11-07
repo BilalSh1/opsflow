@@ -15,6 +15,16 @@ export interface LoginResponse {
   user: AuthUserResponse;
 }
 
+export type RefreshResponse = LoginResponse;
+
+// Returned by AuthService to the controller; the refresh token goes into a
+// cookie and never into the response body.
+export interface AuthResult {
+  body: LoginResponse;
+  refreshToken: string;
+  refreshTokenExpiresAt: Date;
+}
+
 export interface MeResponse {
   user: AuthUserResponse;
 }
