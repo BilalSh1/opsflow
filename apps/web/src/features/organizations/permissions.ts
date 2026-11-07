@@ -24,6 +24,11 @@ export function canManageProjects(role: OrganizationRole): boolean {
   return role === 'OWNER' || role === 'ADMIN'
 }
 
+// Create, update and comment on incidents: everyone except viewers.
+export function canWorkOnIncidents(role: OrganizationRole): boolean {
+  return role !== 'VIEWER'
+}
+
 // Roles the actor may hand out; only owners may grant OWNER.
 export function grantableRoles(actorRole: OrganizationRole): OrganizationRole[] {
   return actorRole === 'OWNER' ? ROLES : ROLES.filter((role) => role !== 'OWNER')

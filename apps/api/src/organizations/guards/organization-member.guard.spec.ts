@@ -27,6 +27,7 @@ describe('OrganizationMemberGuard', () => {
       id: organizationId,
       name: 'Acme Technologies',
       slug: 'acme-technologies',
+      incidentCounter: 0,
       createdAt: new Date('2026-11-07T10:00:00.000Z'),
       updatedAt: new Date('2026-11-07T10:00:00.000Z'),
     },
