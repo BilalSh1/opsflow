@@ -1,8 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router'
+import { AppLayout } from './components/AppLayout'
 import { GuestOnly } from './features/auth/GuestOnly'
 import { RequireAuth } from './features/auth/RequireAuth'
-import { HomePage } from './pages/HomePage'
+import { CreateOrganizationPage } from './pages/CreateOrganizationPage'
+import { HomeRedirect } from './pages/HomeRedirect'
 import { LoginPage } from './pages/LoginPage'
+import { OrganizationPage } from './pages/OrganizationPage'
 import { RegisterPage } from './pages/RegisterPage'
 
 function App() {
@@ -14,7 +17,17 @@ function App() {
       </Route>
 
       <Route element={<RequireAuth />}>
-        <Route path="/" element={<HomePage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomeRedirect />} />
+          <Route
+            path="/organizations/new"
+            element={<CreateOrganizationPage />}
+          />
+          <Route
+            path="/organizations/:organizationId"
+            element={<OrganizationPage />}
+          />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
