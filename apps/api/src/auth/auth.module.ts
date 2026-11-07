@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { RefreshSessionsModule } from '../refresh-sessions/refresh-sessions.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AccessTokenGuard } from './guards/access-token.guard';
@@ -9,6 +10,7 @@ import { AuthService } from './auth.service';
 @Module({
   imports: [
     UsersModule,
+    RefreshSessionsModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
