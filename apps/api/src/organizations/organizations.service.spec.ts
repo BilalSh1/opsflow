@@ -15,6 +15,7 @@ describe('OrganizationsService', () => {
     id: '3b0e8f7a-1c2d-4e5f-8a9b-0c1d2e3f4a5b',
     name: 'Acme Technologies',
     slug: 'acme-technologies',
+    incidentCounter: 0,
     createdAt: new Date('2026-11-07T10:00:00.000Z'),
     updatedAt: new Date('2026-11-07T10:00:00.000Z'),
   };

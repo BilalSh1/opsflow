@@ -110,6 +110,7 @@ export function OrganizationLayout() {
         <NavLink to="." end>
           Overview
         </NavLink>
+        <NavLink to="incidents">Incidents</NavLink>
         <NavLink to="members">Members</NavLink>
         <NavLink to="teams">Teams</NavLink>
         <NavLink to="projects">Projects</NavLink>

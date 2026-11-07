@@ -195,6 +195,13 @@ export function ProjectPage() {
               </>
             )}
           </dl>
+
+          <Link
+            to={`../../incidents?project=${current.id}&status=all`}
+            relative="path"
+          >
+            View this project’s incidents
+          </Link>
         </>
       )}
     </div>

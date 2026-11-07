@@ -7,13 +7,25 @@ export type Permission =
   | 'teams:view'
   | 'teams:manage'
   | 'projects:view'
-  | 'projects:manage';
+  | 'projects:manage'
+  | 'incidents:view'
+  | 'incidents:create'
+  | 'incidents:update'
+  | 'incidents:comment';
 
 // Every member can see these.
 const VIEW: readonly Permission[] = [
   'members:view',
   'teams:view',
   'projects:view',
+  'incidents:view',
+];
+
+// Everyone except viewers can work on incidents.
+const CONTRIBUTE: readonly Permission[] = [
+  'incidents:create',
+  'incidents:update',
+  'incidents:comment',
 ];
 
 // Owners and admins can change these.
@@ -24,9 +36,9 @@ const MANAGE: readonly Permission[] = [
 ];
 
 const ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[]> = {
-  [OrganizationRole.OWNER]: [...VIEW, ...MANAGE],
-  [OrganizationRole.ADMIN]: [...VIEW, ...MANAGE],
-  [OrganizationRole.MEMBER]: VIEW,
+  [OrganizationRole.OWNER]: [...VIEW, ...CONTRIBUTE, ...MANAGE],
+  [OrganizationRole.ADMIN]: [...VIEW, ...CONTRIBUTE, ...MANAGE],
+  [OrganizationRole.MEMBER]: [...VIEW, ...CONTRIBUTE],
   [OrganizationRole.VIEWER]: VIEW,
 };
 

@@ -22,6 +22,16 @@ const globex: Organization = {
   createdAt: '2026-11-06T10:00:00.000Z',
 }
 
+const emptyDashboard = {
+  counts: {
+    byStatus: { OPEN: 0, INVESTIGATING: 0, BLOCKED: 0, RESOLVED: 0, CLOSED: 0 },
+    active: 0,
+    critical: 0,
+  },
+  recentlyCreated: [],
+  recentlyUpdated: [],
+}
+
 const notFound = () =>
   json(404, { message: 'Organization not found', error: 'Not Found', statusCode: 404 })
 
@@ -128,6 +138,10 @@ describe('organizations', () => {
 
       if (call.path === '/organizations') {
         return json(200, { organizations: [] })
+      }
+
+      if (call.path.endsWith('/dashboard')) {
+        return json(200, emptyDashboard)
       }
 
       return json(200, { organization: acme })
