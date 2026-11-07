@@ -112,6 +112,7 @@ export function OrganizationLayout() {
         </NavLink>
         <NavLink to="members">Members</NavLink>
         <NavLink to="teams">Teams</NavLink>
+        <NavLink to="projects">Projects</NavLink>
       </nav>
 
       <Outlet context={context} />
