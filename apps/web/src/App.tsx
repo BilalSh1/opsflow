@@ -8,6 +8,8 @@ import { LoginPage } from './pages/LoginPage'
 import { MembersPage } from './pages/MembersPage'
 import { OrganizationLayout } from './pages/OrganizationLayout'
 import { OrganizationOverview } from './pages/OrganizationOverview'
+import { ProjectPage } from './pages/ProjectPage'
+import { ProjectsPage } from './pages/ProjectsPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { TeamPage } from './pages/TeamPage'
 import { TeamsPage } from './pages/TeamsPage'
@@ -35,6 +37,8 @@ function App() {
             <Route path="members" element={<MembersPage />} />
             <Route path="teams" element={<TeamsPage />} />
             <Route path="teams/:teamId" element={<TeamPage />} />
+            <Route path="projects" element={<ProjectsPage />} />
+            <Route path="projects/:projectId" element={<ProjectPage />} />
           </Route>
         </Route>
       </Route>
