@@ -4,7 +4,7 @@ import { useOrganizations } from './useOrganizations'
 export function OrganizationSwitcher() {
   const { status, organizations } = useOrganizations()
   const navigate = useNavigate()
-  const match = useMatch('/organizations/:organizationId')
+  const match = useMatch('/organizations/:organizationId/*')
 
   if (status !== 'ready' || organizations.length === 0) {
     return null

@@ -1,25 +1,20 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, NavLink, Outlet, useParams } from 'react-router'
 import { ApiError } from '../api/client'
 import { getOrganization } from '../api/organizations'
 import { LoadError } from '../components/LoadError'
 import { useAuth } from '../features/auth/useAuth'
 import { rememberLastOrganizationId } from '../features/organizations/last-organization'
-import type { Organization, OrganizationRole } from '../types/organization'
+import type { CurrentOrganizationContext } from '../features/organizations/useCurrentOrganization'
+import type { Organization } from '../types/organization'
 
 type LoadResult =
   | { status: 'ready'; organization: Organization }
   | { status: 'not-found' }
   | { status: 'error' }
 
-const roleLabels: Record<OrganizationRole, string> = {
-  OWNER: 'Owner',
-  ADMIN: 'Admin',
-  MEMBER: 'Member',
-  VIEWER: 'Viewer',
-}
-
-export function OrganizationPage() {
+// Loads the organization in the URL once for all of its tabs.
+export function OrganizationLayout() {
   const { organizationId = '' } = useParams()
   const { user } = useAuth()
   const [attempt, setAttempt] = useState(0)
@@ -68,6 +63,20 @@ export function OrganizationPage() {
     }
   }, [user, result])
 
+  const updateOrganization = useCallback(
+    (organization: Organization) =>
+      setLoaded({ key, result: { status: 'ready', organization } }),
+    [key],
+  )
+
+  const context = useMemo<CurrentOrganizationContext | null>(
+    () =>
+      result?.status === 'ready'
+        ? { organization: result.organization, updateOrganization }
+        : null,
+    [result, updateOrganization],
+  )
+
   if (!result) {
     return <p className="status">Loading…</p>
   }
@@ -84,7 +93,7 @@ export function OrganizationPage() {
     )
   }
 
-  if (result.status === 'error') {
+  if (result.status === 'error' || !context) {
     return (
       <LoadError
         message="Could not load this organization."
@@ -93,26 +102,18 @@ export function OrganizationPage() {
     )
   }
 
-  const { organization } = result
-
   return (
     <section>
-      <h1>{organization.name}</h1>
+      <h1>{context.organization.name}</h1>
 
-      <dl className="details">
-        <dt>Slug</dt>
-        <dd>{organization.slug}</dd>
+      <nav className="tabs" aria-label="Organization">
+        <NavLink to="." end>
+          Overview
+        </NavLink>
+        <NavLink to="members">Members</NavLink>
+      </nav>
 
-        <dt>Your role</dt>
-        <dd>{roleLabels[organization.role]}</dd>
-
-        <dt>Created</dt>
-        <dd>
-          {new Date(organization.createdAt).toLocaleDateString(undefined, {
-            dateStyle: 'medium',
-          })}
-        </dd>
-      </dl>
+      <Outlet context={context} />
     </section>
   )
 }

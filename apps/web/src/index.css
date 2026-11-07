@@ -235,6 +235,114 @@ a:focus-visible {
   color: var(--text-h);
 }
 
+h2 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 1.1rem;
+}
+
+select {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.form-success {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Organization tabs */
+
+.tabs {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs a {
+  padding: 0.5rem 0;
+  margin-bottom: -1px;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a.active {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
+}
+
+/* Members */
+
+.members {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.add-member {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.add-member-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.members-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.members-table th,
+.members-table td {
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.members-table td {
+  color: var(--text-h);
+  overflow-wrap: anywhere;
+}
+
+.members-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
 @media (max-width: 480px) {
   .auth-card {
     padding: 1.5rem;
@@ -254,5 +362,36 @@ a:focus-visible {
 
   .app-main {
     padding: 1.5rem 1rem;
+  }
+}
+
+/* Members table becomes stacked cards on narrow screens. */
+@media (max-width: 640px) {
+  .add-member-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .members-table thead {
+    display: none;
+  }
+
+  .members-table tr {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .members-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .members-table td[data-label='Email'] {
+    color: var(--muted);
+  }
+
+  .members-actions {
+    text-align: left;
   }
 }
