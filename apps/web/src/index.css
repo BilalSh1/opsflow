@@ -343,6 +343,67 @@ button.danger {
   white-space: nowrap;
 }
 
+/* Teams */
+
+.teams,
+.team {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.inline-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.inline-form-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.inline-form-fields:has(> :nth-child(2):last-child) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.team-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.team-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-list a {
+  font-weight: 500;
+}
+
+.team-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.back-link {
+  font-size: 0.9rem;
+  justify-self: start;
+}
+
 @media (max-width: 480px) {
   .auth-card {
     padding: 1.5rem;
@@ -367,7 +428,9 @@ button.danger {
 
 /* Members table becomes stacked cards on narrow screens. */
 @media (max-width: 640px) {
-  .add-member-fields {
+  .add-member-fields,
+  .inline-form-fields,
+  .inline-form-fields:has(> :nth-child(2):last-child) {
     grid-template-columns: 1fr;
   }
 

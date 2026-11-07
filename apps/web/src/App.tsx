@@ -9,6 +9,8 @@ import { MembersPage } from './pages/MembersPage'
 import { OrganizationLayout } from './pages/OrganizationLayout'
 import { OrganizationOverview } from './pages/OrganizationOverview'
 import { RegisterPage } from './pages/RegisterPage'
+import { TeamPage } from './pages/TeamPage'
+import { TeamsPage } from './pages/TeamsPage'
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
           >
             <Route index element={<OrganizationOverview />} />
             <Route path="members" element={<MembersPage />} />
+            <Route path="teams" element={<TeamsPage />} />
+            <Route path="teams/:teamId" element={<TeamPage />} />
           </Route>
         </Route>
       </Route>
