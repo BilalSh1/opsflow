@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { ProjectsModule } from './projects/projects.module';
 import { TeamsModule } from './teams/teams.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { TeamsModule } from './teams/teams.module';
     AuthModule,
     OrganizationsModule,
     TeamsModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [],
