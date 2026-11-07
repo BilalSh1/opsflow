@@ -14,16 +14,52 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid()) @db.Uuid
-  email           String           @unique @db.VarChar(255)
-  passwordHash    String           @map("password_hash") @db.VarChar(255)
-  firstName       String           @map("first_name") @db.VarChar(100)
-  lastName        String           @map("last_name") @db.VarChar(100)
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  id              String               @id @default(uuid()) @db.Uuid
+  email           String               @unique @db.VarChar(255)
+  passwordHash    String               @map("password_hash") @db.VarChar(255)
+  firstName       String               @map("first_name") @db.VarChar(100)
+  lastName        String               @map("last_name") @db.VarChar(100)
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
   refreshSessions RefreshSession[]
+  memberships     OrganizationMember[]
 
   @@map("users")
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  slug      String   @unique @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members OrganizationMember[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  role           OrganizationRole
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
 }
 
 model RefreshSession {
