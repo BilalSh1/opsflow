@@ -87,6 +87,69 @@ describe('App authentication', () => {
     })
   })
 
+  describe('where login leads', () => {
+    const elsewhere = '/organizations/3b0e8f7a-1c2d-4e5f-8a9b-0c1d2e3f4a5b'
+
+    // Signed in until logout; the organization page itself is a 404.
+    const api = () => {
+      let signedIn = true
+
+      return mockFetch((call) => {
+        switch (call.path) {
+          case '/auth/refresh':
+            return signedIn ? json(200, session()) : unauthorized()
+          case '/auth/login':
+            signedIn = true
+            return json(200, session())
+          case '/auth/logout':
+            signedIn = false
+            return noContent()
+          case '/organizations':
+            return noOrganizations()
+          default:
+            return json(404, { message: 'Organization not found', statusCode: 404 })
+        }
+      })
+    }
+
+    const logIn = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.type(await screen.findByLabelText('Email'), testUser.email)
+      await user.type(screen.getByLabelText('Password'), 'CorrectPassword1!')
+      await user.click(screen.getByRole('button', { name: 'Log in' }))
+    }
+
+    it('returns to the requested page when the session had expired', async () => {
+      mockFetch((call) =>
+        call.path === '/auth/login'
+          ? json(200, session())
+          : call.path === '/organizations'
+            ? noOrganizations()
+            : call.path === '/auth/refresh'
+              ? unauthorized()
+              : json(404, { message: 'Organization not found', statusCode: 404 }),
+      )
+      const user = userEvent.setup()
+
+      renderApp(elsewhere)
+      await logIn(user)
+
+      expect(
+        await screen.findByRole('heading', { name: 'Organization not found' }),
+      ).toBeInTheDocument()
+    })
+
+    it('starts from home after a deliberate logout', async () => {
+      api()
+      const user = userEvent.setup()
+
+      renderApp(elsewhere)
+      await user.click(await screen.findByRole('button', { name: 'Log out' }))
+      await logIn(user)
+
+      expect(await firstOrganizationHeading()).toBeInTheDocument()
+    })
+  })
+
   it('registers, logs in automatically, and logs out', async () => {
     const { calls } = mockFetch((call) => {
       switch (call.path) {

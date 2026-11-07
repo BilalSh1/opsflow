@@ -56,14 +56,21 @@ Do not make unrelated changes in the same branch.
 Backend:
 cd apps/api
 npm run build
-npm run lint
+npm run lint:check
+npm run typecheck
 npm test
 npm run test:e2e
 npm run start:dev
+npm run prisma:generate   # after install and after every schema change
+npm run db:migrate        # create and apply a migration
+npm run db:seed           # reset the demo organization
 
 Frontend:
 cd apps/web
 npm run dev
+npm run lint
+npm run build
+npm test
 
 Database:
 docker compose up -d postgres
@@ -71,5 +78,6 @@ docker compose ps
 
 ## Current Priority
 
-Finish authentication, then move to frontend authentication and the core product:
-organizations -> RBAC -> teams -> projects -> incidents.
+The MVP is complete. Next, in order: email invitations, organization
+settings (rename, delete), end-to-end tests, then deployment.
+See docs/development-plan.md.
