@@ -116,7 +116,3 @@ apps/
       pages/           routed screens
 docs/                  requirements, scope, design notes, screenshots
 ```
-
-## Roadmap
-
-See the [development plan](docs/development-plan.md). Next up: email invitations, organization settings, end-to-end tests and a hosted demo.
