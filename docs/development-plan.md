@@ -15,9 +15,9 @@ OpsFlow is built in small, focused pull requests. Each one solves one requiremen
 | Teams | Create, rename and delete teams; manage team members | #22–#23 |
 | Projects | Create, edit, archive, restore and delete projects | #24–#25 |
 | Incidents | Numbered incidents, status workflow, assignment, comments, activity history, filtered and paginated list, dashboard | #26 |
-| Invitations | Invite by email with a one-time link, including people without an account; accept, decline, revoke | |
-| Organization settings | Rename (owners and admins) and delete with all data (owners) | |
-| End-to-end tests | API tests against a test database for authentication, the incident flow and cross-organization isolation; Playwright tests for the incident and invitation journeys | |
+| Invitations | Invite by email with a one-time link, including people without an account; accept, decline, revoke | #30 |
+| Organization settings | Rename (owners and admins) and delete with all data (owners) | #32 |
+| End-to-end tests | API tests against a test database for authentication, the incident flow and cross-organization isolation; Playwright tests for the incident and invitation journeys | #29, #31 |
 
 All MVP completion criteria in [mvp-scope.md](mvp-scope.md) are met. Invitations are shared as links rather than emailed, because the app does not send email yet.
 
