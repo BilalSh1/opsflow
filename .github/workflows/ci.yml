@@ -79,3 +79,64 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
+
+  browser-e2e:
+    name: Browser E2E
+    runs-on: ubuntu-latest
+
+    # Playwright starts the API and the Vite dev server against this
+    # database; the tests sign up their own users.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: opsflow
+          POSTGRES_PASSWORD: opsflow
+          POSTGRES_DB: opsflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U opsflow -d opsflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://opsflow:opsflow@localhost:5432/opsflow?schema=public
+      JWT_ACCESS_SECRET: ci-only-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            apps/api/package-lock.json
+            apps/web/package-lock.json
+
+      - name: Prepare API and database
+        working-directory: apps/api
+        run: |
+          npm ci
+          npm run prisma:generate
+          npx prisma migrate deploy
+
+      - name: Install web app and Chromium
+        working-directory: apps/web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        working-directory: apps/web
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

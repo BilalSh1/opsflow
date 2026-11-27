@@ -29,7 +29,7 @@ OpsFlow is a multi-tenant incident-management app for engineering, support and o
 | API | Node.js, NestJS 11, TypeScript, class-validator |
 | Database | PostgreSQL 17, Prisma 7 |
 | Auth | Argon2 password hashing, JWT access tokens, rotating refresh tokens in httpOnly cookies |
-| Tests | Jest (API), Vitest and Testing Library (web) |
+| Tests | Jest and Supertest (API), Vitest and Testing Library (web), Playwright (browser) |
 | Tooling | Docker Compose, ESLint, Prettier, GitHub Actions |
 
 ## Architecture
@@ -92,7 +92,7 @@ The dev server proxies `/api` to the API, so the app and API share an origin loc
 | --- | --- | --- |
 | Start | `npm run start:dev` | `npm run dev` |
 | Test | `npm test` | `npm test` |
-| API end-to-end tests | `npm run test:e2e` | |
+| End-to-end tests | `npm run test:e2e` | `npm run test:e2e` |
 | Lint | `npm run lint:check` | `npm run lint` |
 | Type check | `npm run typecheck` | included in `npm run build` |
 | Build | `npm run build` | `npm run build` |
@@ -101,7 +101,9 @@ After changing `prisma/schema.prisma`, run `npm run db:migrate` and `npm run pri
 
 The API end-to-end tests run the real app against PostgreSQL: authentication and refresh-token rotation, the full incident flow, and cross-organization isolation for every organization route. They use their own database, `TEST_DATABASE_URL` or the `DATABASE_URL` database with `_test` appended, which they create, migrate and empty as needed; the database name must end in `_test`.
 
-CI runs lint, type checks, builds and tests for both apps, plus the API end-to-end tests, on every pull request, and applies all migrations and the demo seed to a fresh PostgreSQL database.
+The browser tests (Playwright, in `apps/web/e2e`) drive the real app in Chromium: reporting, investigating and resolving an incident, and inviting someone who signs up and joins. They start the API and the web dev server, or reuse ones already running, against the database in `DATABASE_URL`, and sign up fresh users each run. Install the browser once with `npx playwright install chromium`.
+
+CI runs lint, type checks, builds and tests for both apps, plus both end-to-end suites, on every pull request, and applies all migrations and the demo seed to a fresh PostgreSQL database.
 
 ## Project structure
 
