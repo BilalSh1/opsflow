@@ -4,6 +4,7 @@ import type {
   IncidentCommentResponse,
   IncidentListResponse,
 } from '../src/incidents/interfaces/incident-response.interface';
+import type { CreatedInvitationResponse } from '../src/invitations/interfaces/invitation-response.interface';
 import type {
   MemberDetailResponse,
   MemberListResponse,
@@ -33,6 +34,7 @@ describe('Tenant isolation (e2e)', () => {
   let teamA: string;
   let projectA: string;
   let commentA: string;
+  let invitationA: string;
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -77,6 +79,13 @@ describe('Tenant isolation (e2e)', () => {
       .expect(201);
     commentA = (comment.body as { comment: IncidentCommentResponse }).comment
       .id;
+
+    const invitation = await api(app)
+      .post(`${a}/invitations`)
+      .set(asAlice)
+      .send({ email: 'alpha-invitee@example.com', role: 'MEMBER' })
+      .expect(201);
+    invitationA = (invitation.body as CreatedInvitationResponse).invitation.id;
   });
 
   afterAll(async () => {
@@ -106,6 +115,9 @@ describe('Tenant isolation (e2e)', () => {
       ['post', '/members'],
       ['patch', '/members/:member'],
       ['delete', '/members/:member'],
+      ['get', '/invitations'],
+      ['post', '/invitations'],
+      ['delete', '/invitations/:invitation'],
       ['get', '/teams'],
       ['post', '/teams'],
       ['get', '/teams/:team'],
@@ -135,10 +147,11 @@ describe('Tenant isolation (e2e)', () => {
         .replace(':member', aliceMemberId)
         .replace(':team', teamA)
         .replace(':project', projectA)
-        .replace(':comment', commentA);
+        .replace(':comment', commentA)
+        .replace(':invitation', invitationA);
 
-      // A valid body, so the 404 comes from the tenant check and not from
-      // validation.
+      // Guards run before validation, so an empty body still reaches the
+      // tenant check.
       const response = await api(app)
         [method](url)
         .set(bearer(bob.accessToken))

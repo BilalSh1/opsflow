@@ -21,6 +21,7 @@ import { PermissionGuard } from './permissions/permission.guard';
     PermissionGuard,
   ],
   exports: [
+    OrganizationsService,
     OrganizationMembersService,
     OrganizationMemberGuard,
     PermissionGuard,

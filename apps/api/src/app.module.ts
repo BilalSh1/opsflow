@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { IncidentsModule } from './incidents/incidents.module';
+import { InvitationsModule } from './invitations/invitations.module';
 import { ProjectsModule } from './projects/projects.module';
 import { TeamsModule } from './teams/teams.module';
 
@@ -15,6 +16,7 @@ import { TeamsModule } from './teams/teams.module';
     }),
     AuthModule,
     OrganizationsModule,
+    InvitationsModule,
     TeamsModule,
     ProjectsModule,
     IncidentsModule,
