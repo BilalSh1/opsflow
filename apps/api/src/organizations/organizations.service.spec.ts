@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import {
   OrganizationRole,
   type Organization,
@@ -24,8 +24,19 @@ describe('OrganizationsService', () => {
     Promise.resolve(organization),
   );
 
+  const updateMock = jest.fn((): Promise<Organization> =>
+    Promise.resolve(organization),
+  );
+  const deleteMock = jest.fn((): Promise<Organization> =>
+    Promise.resolve(organization),
+  );
+
   const prismaMock = {
-    organization: { create: createMock },
+    organization: {
+      create: createMock,
+      update: updateMock,
+      delete: deleteMock,
+    },
   } as unknown as PrismaService;
 
   let organizationMembersServiceMock: jest.Mocked<
@@ -110,6 +121,59 @@ describe('OrganizationsService', () => {
       ).rejects.toBe(failure);
 
       expect(createMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('rename', () => {
+    const membership = {
+      organizationId: organization.id,
+      role: OrganizationRole.ADMIN,
+    } as MembershipWithOrganization;
+
+    it('trims the name, keeps the slug and returns the caller role', async () => {
+      updateMock.mockResolvedValueOnce({ ...organization, name: 'Acme Inc' });
+
+      const result = await organizationsService.rename(
+        membership,
+        ' Acme Inc ',
+      );
+
+      expect(updateMock).toHaveBeenCalledWith({
+        where: { id: organization.id },
+        data: { name: 'Acme Inc' },
+      });
+      expect(result).toMatchObject({
+        name: 'Acme Inc',
+        slug: 'acme-technologies',
+        role: OrganizationRole.ADMIN,
+      });
+    });
+
+    it('is a 404 when the organization was deleted meanwhile', async () => {
+      updateMock.mockRejectedValueOnce({ code: 'P2025' });
+
+      await expect(
+        organizationsService.rename(membership, 'Acme Inc'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('delete', () => {
+    it('deletes the organization by id', async () => {
+      await organizationsService.delete(organization.id);
+
+      expect(deleteMock).toHaveBeenCalledWith({
+        where: { id: organization.id },
+      });
+    });
+
+    it('rethrows other database errors', async () => {
+      const failure = new Error('connection lost');
+      deleteMock.mockRejectedValueOnce(failure);
+
+      await expect(organizationsService.delete(organization.id)).rejects.toBe(
+        failure,
+      );
     });
   });
 

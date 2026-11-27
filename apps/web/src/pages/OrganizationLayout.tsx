@@ -4,6 +4,7 @@ import { ApiError } from '../api/client'
 import { getOrganization } from '../api/organizations'
 import { LoadError } from '../components/LoadError'
 import { useAuth } from '../features/auth/useAuth'
+import { canManageOrganization } from '../features/organizations/permissions'
 import { rememberLastOrganizationId } from '../features/organizations/last-organization'
 import type { CurrentOrganizationContext } from '../features/organizations/useCurrentOrganization'
 import type { Organization } from '../types/organization'
@@ -114,6 +115,9 @@ export function OrganizationLayout() {
         <NavLink to="members">Members</NavLink>
         <NavLink to="teams">Teams</NavLink>
         <NavLink to="projects">Projects</NavLink>
+        {canManageOrganization(context.organization.role) && (
+          <NavLink to="settings">Settings</NavLink>
+        )}
       </nav>
 
       <Outlet context={context} />

@@ -111,6 +111,8 @@ describe('Tenant isolation (e2e)', () => {
       path: string,
     ][] = [
       ['get', ''],
+      ['patch', ''],
+      ['delete', ''],
       ['get', '/members'],
       ['post', '/members'],
       ['patch', '/members/:member'],

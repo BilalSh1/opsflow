@@ -12,6 +12,15 @@ export const roleLabels: Record<OrganizationRole, string> = {
   VIEWER: 'Viewer',
 }
 
+// Rename the organization; only owners may also delete it.
+export function canManageOrganization(role: OrganizationRole): boolean {
+  return role === 'OWNER' || role === 'ADMIN'
+}
+
+export function canDeleteOrganization(role: OrganizationRole): boolean {
+  return role === 'OWNER'
+}
+
 export function canManageMembers(role: OrganizationRole): boolean {
   return role === 'OWNER' || role === 'ADMIN'
 }

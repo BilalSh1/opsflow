@@ -8,6 +8,8 @@ export interface OrganizationsContextValue {
   organizations: Organization[]
   reload: () => void
   addOrganization: (organization: Organization) => void
+  // Updates an organization in place, e.g. after a rename.
+  replaceOrganization: (organization: Organization) => void
   removeOrganization: (organizationId: string) => void
 }
 
