@@ -2,6 +2,8 @@ import { OrganizationRole } from '../../generated/prisma/client';
 
 // Add a permission here and to the roles that should have it.
 export type Permission =
+  | 'organization:manage'
+  | 'organization:delete'
   | 'members:view'
   | 'members:manage'
   | 'teams:view'
@@ -30,13 +32,20 @@ const CONTRIBUTE: readonly Permission[] = [
 
 // Owners and admins can change these.
 const MANAGE: readonly Permission[] = [
+  'organization:manage',
   'members:manage',
   'teams:manage',
   'projects:manage',
 ];
 
 const ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[]> = {
-  [OrganizationRole.OWNER]: [...VIEW, ...CONTRIBUTE, ...MANAGE],
+  // Deleting the organization is for owners only.
+  [OrganizationRole.OWNER]: [
+    ...VIEW,
+    ...CONTRIBUTE,
+    ...MANAGE,
+    'organization:delete',
+  ],
   [OrganizationRole.ADMIN]: [...VIEW, ...CONTRIBUTE, ...MANAGE],
   [OrganizationRole.MEMBER]: [...VIEW, ...CONTRIBUTE],
   [OrganizationRole.VIEWER]: VIEW,

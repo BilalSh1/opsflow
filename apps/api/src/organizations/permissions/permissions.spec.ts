@@ -19,6 +19,26 @@ describe('hasPermission', () => {
     });
   });
 
+  describe('organization', () => {
+    it.each([
+      [OWNER, true],
+      [ADMIN, true],
+      [MEMBER, false],
+      [VIEWER, false],
+    ])('%s may rename the organization: %s', (role, expected) => {
+      expect(hasPermission(role, 'organization:manage')).toBe(expected);
+    });
+
+    it.each([
+      [OWNER, true],
+      [ADMIN, false],
+      [MEMBER, false],
+      [VIEWER, false],
+    ])('%s may delete the organization: %s', (role, expected) => {
+      expect(hasPermission(role, 'organization:delete')).toBe(expected);
+    });
+  });
+
   describe('incidents', () => {
     it.each([OWNER, ADMIN, MEMBER, VIEWER])('%s may view incidents', (role) => {
       expect(hasPermission(role, 'incidents:view')).toBe(true);

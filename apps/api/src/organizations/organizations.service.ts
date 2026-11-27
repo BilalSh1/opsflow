@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   OrganizationRole,
   type Organization,
@@ -60,6 +64,33 @@ export class OrganizationsService {
     );
   }
 
+  // The slug is kept, so existing links and ids stay valid after a rename.
+  async rename(
+    membership: MembershipWithOrganization,
+    name: string,
+  ): Promise<OrganizationResponse> {
+    try {
+      const organization = await this.prisma.organization.update({
+        where: { id: membership.organizationId },
+        data: { name: name.trim() },
+      });
+
+      return this.toResponse(organization, membership.role);
+    } catch (error: unknown) {
+      throw this.notFoundIfMissing(error);
+    }
+  }
+
+  // Removes everything the organization owns (members, teams, projects,
+  // incidents, invitations) through the database cascades.
+  async delete(organizationId: string): Promise<void> {
+    try {
+      await this.prisma.organization.delete({ where: { id: organizationId } });
+    } catch (error: unknown) {
+      throw this.notFoundIfMissing(error);
+    }
+  }
+
   toMembershipResponse(
     membership: MembershipWithOrganization,
   ): OrganizationResponse {
@@ -77,6 +108,17 @@ export class OrganizationsService {
       role,
       createdAt: organization.createdAt.toISOString(),
     };
+  }
+
+  // Deleted by someone else between the guard and this query.
+  private notFoundIfMissing(error: unknown): unknown {
+    const missing =
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2025';
+
+    return missing ? new NotFoundException('Organization not found') : error;
   }
 
   private isSlugConflict(error: unknown): boolean {

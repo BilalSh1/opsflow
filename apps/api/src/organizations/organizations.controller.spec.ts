@@ -21,7 +21,7 @@ describe('OrganizationsController', () => {
   let organizationsServiceMock: jest.Mocked<
     Pick<
       OrganizationsService,
-      'create' | 'findAllForUser' | 'toMembershipResponse'
+      'create' | 'findAllForUser' | 'toMembershipResponse' | 'rename' | 'delete'
     >
   >;
   let controller: OrganizationsController;
@@ -31,6 +31,8 @@ describe('OrganizationsController', () => {
       create: jest.fn(),
       findAllForUser: jest.fn(),
       toMembershipResponse: jest.fn(),
+      rename: jest.fn(),
+      delete: jest.fn(),
     };
 
     controller = new OrganizationsController(
@@ -79,6 +81,34 @@ describe('OrganizationsController', () => {
     });
     expect(organizationsServiceMock.toMembershipResponse).toHaveBeenCalledWith(
       membership,
+    );
+  });
+
+  it('renames the organization of the guarded membership', async () => {
+    const membership = {
+      organizationId: organizationResponse.id,
+      role: OrganizationRole.ADMIN,
+    } as MembershipWithOrganization;
+    organizationsServiceMock.rename.mockResolvedValue(organizationResponse);
+
+    await expect(
+      controller.update(membership, { name: 'Acme Inc' }),
+    ).resolves.toEqual({ organization: organizationResponse });
+    expect(organizationsServiceMock.rename).toHaveBeenCalledWith(
+      membership,
+      'Acme Inc',
+    );
+  });
+
+  it('deletes the organization of the guarded membership', async () => {
+    const membership = {
+      organizationId: organizationResponse.id,
+    } as MembershipWithOrganization;
+
+    await controller.remove(membership);
+
+    expect(organizationsServiceMock.delete).toHaveBeenCalledWith(
+      organizationResponse.id,
     );
   });
 });
