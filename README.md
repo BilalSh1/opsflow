@@ -91,13 +91,16 @@ The dev server proxies `/api` to the API, so the app and API share an origin loc
 | --- | --- | --- |
 | Start | `npm run start:dev` | `npm run dev` |
 | Test | `npm test` | `npm test` |
+| API end-to-end tests | `npm run test:e2e` | |
 | Lint | `npm run lint:check` | `npm run lint` |
 | Type check | `npm run typecheck` | included in `npm run build` |
 | Build | `npm run build` | `npm run build` |
 
 After changing `prisma/schema.prisma`, run `npm run db:migrate` and `npm run prisma:generate` in `apps/api`.
 
-CI runs lint, type checks, builds and tests for both apps on every pull request, and applies all migrations and the demo seed to a fresh PostgreSQL database.
+The API end-to-end tests run the real app against PostgreSQL: authentication and refresh-token rotation, the full incident flow, and cross-organization isolation for every organization route. They use their own database, `TEST_DATABASE_URL` or the `DATABASE_URL` database with `_test` appended, which they create, migrate and empty as needed; the database name must end in `_test`.
+
+CI runs lint, type checks, builds and tests for both apps, plus the API end-to-end tests, on every pull request, and applies all migrations and the demo seed to a fresh PostgreSQL database.
 
 ## Project structure
 

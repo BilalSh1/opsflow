@@ -1,8 +1,7 @@
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { configureApp } from './configure-app';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -12,22 +11,12 @@ async function bootstrap(): Promise<void> {
   const webOrigin =
     configService.get<string>('WEB_ORIGIN') ?? 'http://localhost:5173';
 
-  app.setGlobalPrefix('api/v1');
-
-  app.use(cookieParser());
+  configureApp(app);
 
   app.enableCors({
     origin: webOrigin,
     credentials: true,
   });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
 
   await app.listen(port);
 
