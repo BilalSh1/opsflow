@@ -1,15 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import {
-  addMember,
-  listMembers,
-  removeMember,
-  updateMemberRole,
-} from '../api/members'
+import { listMembers, removeMember, updateMemberRole } from '../api/members'
 import { LoadError } from '../components/LoadError'
-import { TextField } from '../components/TextField'
 import { errorMessage } from '../features/auth/error-message'
 import { useAuth } from '../features/auth/useAuth'
+import { InvitationsSection } from '../features/invitations/InvitationsSection'
 import {
   canManageMember,
   canManageMembers,
@@ -144,13 +139,9 @@ export function MembersPage() {
       )}
 
       {canManageMembers(actorRole) && (
-        <AddMemberForm
+        <InvitationsSection
+          organizationId={organization.id}
           actorRole={actorRole}
-          onAdd={async (email, role) => {
-            const member = await addMember(organization.id, email, role)
-            setMembers([...members, member])
-            return member
-          }}
         />
       )}
 
@@ -232,86 +223,5 @@ export function MembersPage() {
         </tbody>
       </table>
     </div>
-  )
-}
-
-function AddMemberForm({
-  actorRole,
-  onAdd,
-}: {
-  actorRole: OrganizationRole
-  onAdd: (email: string, role: OrganizationRole) => Promise<Member>
-}) {
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState<OrganizationRole>('MEMBER')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [added, setAdded] = useState<string | null>(null)
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setAdded(null)
-    setSubmitting(true)
-
-    try {
-      const member = await onAdd(email, role)
-      setAdded(`${member.firstName} ${member.lastName} was added.`)
-      setEmail('')
-    } catch (caught) {
-      setError(errorMessage(caught))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <form className="add-member" onSubmit={handleSubmit}>
-      <h2>Add a member</h2>
-      <p className="muted">They need an OpsFlow account already.</p>
-
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
-      {added && (
-        <p className="form-success" role="status">
-          {added}
-        </p>
-      )}
-
-      <div className="add-member-fields">
-        <TextField
-          label="Email"
-          type="email"
-          required
-          maxLength={255}
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-
-        <div className="field">
-          <label htmlFor="add-member-role">Role</label>
-          <select
-            id="add-member-role"
-            value={role}
-            onChange={(event) =>
-              setRole(event.target.value as OrganizationRole)
-            }
-          >
-            {grantableRoles(actorRole).map((option) => (
-              <option key={option} value={option}>
-                {roleLabels[option]}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Adding…' : 'Add member'}
-        </button>
-      </div>
-    </form>
   )
 }

@@ -13,7 +13,7 @@ import { UsersService } from '../users/users.service';
 import type { MemberWithUser } from './interfaces/membership.interface';
 import type { MemberResponse } from './interfaces/member-response.interface';
 import { OrganizationMembersService } from './organization-members.service';
-import { hasPermission } from './permissions/permissions';
+import { hasPermission, mayGrantRole } from './permissions/permissions';
 
 // The acting user's membership in the organization (from the guard).
 type Actor = Pick<OrganizationMember, 'organizationId' | 'userId' | 'role'>;
@@ -34,7 +34,8 @@ export class MembersService {
     return members.map((member) => this.toResponse(member));
   }
 
-  // Adds an existing user directly; there is no invitation step.
+  // Adds an existing user directly, without asking them. The web app
+  // invites people instead (see InvitationsService).
   async add(
     actor: Actor,
     email: string,
@@ -170,12 +171,8 @@ export class MembersService {
     return target;
   }
 
-  // Only owners may give out the OWNER role.
   private assertMayGrant(actor: Actor, role: OrganizationRole): void {
-    if (
-      role === OrganizationRole.OWNER &&
-      actor.role !== OrganizationRole.OWNER
-    ) {
+    if (!mayGrantRole(actor.role, role)) {
       throw new ForbiddenException('Only owners can manage owners');
     }
   }

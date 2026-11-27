@@ -6,6 +6,7 @@ import { CreateOrganizationPage } from './pages/CreateOrganizationPage'
 import { HomeRedirect } from './pages/HomeRedirect'
 import { IncidentPage } from './pages/IncidentPage'
 import { IncidentsPage } from './pages/IncidentsPage'
+import { InvitationPage } from './pages/InvitationPage'
 import { LoginPage } from './pages/LoginPage'
 import { MembersPage } from './pages/MembersPage'
 import { NewIncidentPage } from './pages/NewIncidentPage'
@@ -24,6 +25,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
+
+      {/* Works logged in or out: the invited person may not have an
+          account yet. */}
+      <Route path="/invitations/:token" element={<InvitationPage />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>

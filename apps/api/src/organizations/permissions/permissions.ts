@@ -48,3 +48,13 @@ export function hasPermission(
 ): boolean {
   return ROLE_PERMISSIONS[role].includes(permission);
 }
+
+// Only owners may give out the OWNER role, directly or by invitation.
+export function mayGrantRole(
+  actorRole: OrganizationRole,
+  role: OrganizationRole,
+): boolean {
+  return (
+    role !== OrganizationRole.OWNER || actorRole === OrganizationRole.OWNER
+  );
+}

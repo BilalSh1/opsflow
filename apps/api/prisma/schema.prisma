@@ -26,6 +26,7 @@ model User {
   reportedIncidents  Incident[]           @relation("IncidentReporter")
   incidentComments   IncidentComment[]
   incidentActivities IncidentActivity[]
+  sentInvitations    Invitation[]
 
   @@map("users")
 }
@@ -46,10 +47,11 @@ model Organization {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  members   OrganizationMember[]
-  teams     Team[]
-  projects  Project[]
-  incidents Incident[]
+  members     OrganizationMember[]
+  teams       Team[]
+  projects    Project[]
+  incidents   Incident[]
+  invitations Invitation[]
 
   @@map("organizations")
 }
@@ -70,6 +72,38 @@ model OrganizationMember {
   @@unique([organizationId, userId])
   @@index([userId])
   @@map("organization_members")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+}
+
+// An invitation to join an organization, shared as a link. Only a hash of
+// the link's token is stored. Inviting the same email again replaces the
+// token of its pending invitation, so there is at most one per email.
+model Invitation {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  // Normalized (trimmed, lower case) like users.email.
+  email          String           @db.VarChar(255)
+  role           OrganizationRole
+  tokenHash      String           @unique @map("token_hash") @db.VarChar(64)
+  status         InvitationStatus @default(PENDING)
+  invitedById    String?          @map("invited_by_id") @db.Uuid
+  expiresAt      DateTime         @map("expires_at")
+  respondedAt    DateTime?        @map("responded_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User?        @relation(fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([organizationId, email])
+  @@map("invitations")
 }
 
 model Team {

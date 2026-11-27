@@ -3,11 +3,23 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { json, mockFetch, noContent, session, testUser } from '../test/fetch-mock'
 import { renderApp } from '../test/render-app'
+import type { Invitation } from '../types/invitation'
 import type { Member } from '../types/member'
 import type { Organization, OrganizationRole } from '../types/organization'
 
 const organizationId = '3b0e8f7a-1c2d-4e5f-8a9b-0c1d2e3f4a5b'
 const membersUrl = `/organizations/${organizationId}/members`
+const invitationsUrl = `/organizations/${organizationId}/invitations`
+
+const pendingInvitation: Invitation = {
+  id: 'inv-1',
+  email: 'pending@example.test',
+  role: 'MEMBER',
+  invitedBy: { firstName: 'Olivia', lastName: 'Test' },
+  expiresAt: '2026-11-14T10:00:00.000Z',
+  expired: false,
+  createdAt: '2026-11-07T10:00:00.000Z',
+}
 
 const memberOf = (
   id: string,
@@ -54,6 +66,8 @@ function setup(role: OrganizationRole, handlers: Partial<Record<string, () => Re
         return json(200, { organization })
       case `/organizations/${organizationId}/members`:
         return json(200, { members: [otherOwner, self, otherMember] })
+      case invitationsUrl:
+        return json(200, { invitations: [] })
       default:
         return json(500, { message: `Unexpected ${call.method} ${call.path}` })
     }
@@ -78,7 +92,7 @@ describe('MembersPage', () => {
     renderApp(membersUrl)
 
     expect(await rowFor('Olivia')).toHaveTextContent('Owner')
-    expect(screen.queryByRole('heading', { name: 'Add a member' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Invite people' })).toBeNull()
     expect(screen.queryByRole('combobox', { name: /Role for/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /Remove/ })).toBeNull()
     expect(
@@ -106,48 +120,99 @@ describe('MembersPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('adds a member by email', async () => {
-    const newcomer = memberOf('m-new', 'Nora', 'VIEWER')
+  it('invites someone and shows the link once', async () => {
+    const token = 'A'.repeat(43)
+    const invitation: Invitation = {
+      ...pendingInvitation,
+      id: 'inv-new',
+      email: 'nora@example.test',
+      role: 'VIEWER',
+    }
     const { calls } = setup('ADMIN', {
-      [`POST ${membersUrl}`]: () => json(201, { member: newcomer }),
+      [`POST ${invitationsUrl}`]: () => json(201, { invitation, token }),
     })
     const user = userEvent.setup()
 
     renderApp(membersUrl)
 
-    await user.type(await screen.findByLabelText('Email'), newcomer.email)
+    await user.type(await screen.findByLabelText('Email'), invitation.email)
     await user.selectOptions(screen.getByLabelText('Role'), 'VIEWER')
-    await user.click(screen.getByRole('button', { name: 'Add member' }))
+    await user.click(screen.getByRole('button', { name: 'Invite' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Nora Test was added.',
+      'Invitation for nora@example.test created.',
     )
-    expect(await rowFor('Nora')).toHaveTextContent(newcomer.email)
+    expect(screen.getByLabelText('Invitation link')).toHaveValue(
+      `${window.location.origin}/invitations/${token}`,
+    )
     expect(
-      calls.find((call) => call.method === 'POST' && call.path === membersUrl)
+      screen.getByRole('button', {
+        name: 'Revoke invitation for nora@example.test',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      calls.find((call) => call.method === 'POST' && call.path === invitationsUrl)
         ?.body,
-    ).toEqual({ email: newcomer.email, role: 'VIEWER' })
+    ).toEqual({ email: invitation.email, role: 'VIEWER' })
   })
 
-  it('shows the API error when adding fails', async () => {
+  it('does not offer the owner role to admins', async () => {
+    setup('ADMIN')
+
+    renderApp(membersUrl)
+
+    const role = await screen.findByLabelText('Role')
+    expect(within(role).queryByRole('option', { name: 'Owner' })).toBeNull()
+  })
+
+  it('shows the API error when inviting fails', async () => {
     setup('OWNER', {
-      [`POST ${membersUrl}`]: () =>
-        json(404, {
-          message: 'No account found with this email',
-          error: 'Not Found',
-          statusCode: 404,
+      [`POST ${invitationsUrl}`]: () =>
+        json(409, {
+          message: 'This person is already a member',
+          error: 'Conflict',
+          statusCode: 409,
         }),
     })
     const user = userEvent.setup()
 
     renderApp(membersUrl)
 
-    await user.type(await screen.findByLabelText('Email'), 'nobody@example.test')
-    await user.click(screen.getByRole('button', { name: 'Add member' }))
+    await user.type(await screen.findByLabelText('Email'), otherMember.email)
+    await user.click(screen.getByRole('button', { name: 'Invite' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'No account found with this email',
+      'This person is already a member',
     )
+  })
+
+  it('revokes a pending invitation after confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { calls } = setup('OWNER', {
+      [`GET ${invitationsUrl}`]: () =>
+        json(200, { invitations: [pendingInvitation] }),
+      [`DELETE ${invitationsUrl}/${pendingInvitation.id}`]: () => noContent(),
+    })
+    const user = userEvent.setup()
+
+    renderApp(membersUrl)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Revoke invitation for pending@example.test',
+      }),
+    )
+
+    await vi.waitFor(() =>
+      expect(screen.queryByText('pending@example.test')).toBeNull(),
+    )
+    expect(
+      calls.some(
+        (call) =>
+          call.method === 'DELETE' &&
+          call.path === `${invitationsUrl}/${pendingInvitation.id}`,
+      ),
+    ).toBe(true)
   })
 
   it('changes a role', async () => {

@@ -1,5 +1,5 @@
 import { OrganizationRole } from '../../generated/prisma/client';
-import { hasPermission } from './permissions';
+import { hasPermission, mayGrantRole } from './permissions';
 
 const { OWNER, ADMIN, MEMBER, VIEWER } = OrganizationRole;
 
@@ -34,5 +34,17 @@ describe('hasPermission', () => {
       expect(hasPermission(role, 'incidents:update')).toBe(expected);
       expect(hasPermission(role, 'incidents:comment')).toBe(expected);
     });
+  });
+});
+
+describe('mayGrantRole', () => {
+  it.each([OWNER, ADMIN, MEMBER, VIEWER])('owners may grant %s', (role) => {
+    expect(mayGrantRole(OWNER, role)).toBe(true);
+  });
+
+  it('admins may grant every role except OWNER', () => {
+    expect(mayGrantRole(ADMIN, OWNER)).toBe(false);
+    expect(mayGrantRole(ADMIN, ADMIN)).toBe(true);
+    expect(mayGrantRole(ADMIN, VIEWER)).toBe(true);
   });
 });

@@ -314,6 +314,46 @@ button.danger {
   gap: 0.75rem;
 }
 
+/* Invitations */
+
+.invite-link {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.invite-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.invite-link-row input {
+  font: inherit;
+  min-width: 0;
+}
+
+.pending-invitations {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pending-invitations h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.invitation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.button-link.secondary {
+  background: transparent;
+  color: var(--text-h);
+  border: 1px solid var(--border);
+}
+
 .members-table {
   width: 100%;
   border-collapse: collapse;
