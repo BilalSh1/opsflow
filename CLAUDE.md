@@ -71,6 +71,7 @@ npm run dev
 npm run lint
 npm run build
 npm test
+npm run test:e2e          # Playwright; starts or reuses the API and dev server
 
 Database:
 docker compose up -d postgres
@@ -78,6 +79,6 @@ docker compose ps
 
 ## Current Priority
 
-The MVP is complete, including invitations. Next, in order: organization
-settings (rename, delete), end-to-end tests, then deployment.
+The MVP is complete, including invitations and end-to-end tests. Next, in
+order: organization settings (rename, delete), then deployment.
 See docs/development-plan.md.
