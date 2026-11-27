@@ -52,6 +52,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+      - name: End-to-end tests (own database)
+        run: npm run test:e2e
       - name: Apply migrations to an empty database
         run: npx prisma migrate deploy
       - name: Seed demo data
