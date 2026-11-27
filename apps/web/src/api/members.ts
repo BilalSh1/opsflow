@@ -13,19 +13,6 @@ export async function listMembers(organizationId: string): Promise<Member[]> {
   return members
 }
 
-export async function addMember(
-  organizationId: string,
-  email: string,
-  role: OrganizationRole,
-): Promise<Member> {
-  const { member } = await apiRequest<{ member: Member }>(
-    membersPath(organizationId),
-    { method: 'POST', body: { email, role } },
-  )
-
-  return member
-}
-
 export async function updateMemberRole(
   organizationId: string,
   memberId: string,

@@ -13,6 +13,7 @@ OpsFlow is a multi-tenant incident-management app for engineering, support and o
 ## Features
 
 - **Organizations and roles**: users belong to any number of organizations as Owner, Admin, Member or Viewer. Owners and admins manage members, teams and projects; viewers are read-only.
+- **Invitations**: owners and admins invite people by email, including people without an account yet. The invite is a one-time link that expires after 7 days; only a hash of its token is stored, and accepting needs both the link and an account with the invited email.
 - **Incidents**: numbered per organization (`INC-12`), with priority, an optional project, an assignee and a team.
 - **Status workflow**: Open → Investigating ⇄ Blocked → Resolved → Closed, with reopening. Only valid transitions are offered, and resolved and closed dates are set automatically.
 - **Comments and activity**: one timeline per incident, recording who changed what and when ("Alice changed priority from High to Critical").

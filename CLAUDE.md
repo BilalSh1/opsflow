@@ -78,6 +78,6 @@ docker compose ps
 
 ## Current Priority
 
-The MVP is complete. Next, in order: email invitations, organization
+The MVP is complete, including invitations. Next, in order: organization
 settings (rename, delete), end-to-end tests, then deployment.
 See docs/development-plan.md.
